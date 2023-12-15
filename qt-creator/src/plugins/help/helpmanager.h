@@ -1,0 +1,68 @@
+// Copyright (C) 2016 The Qt Company Ltd.
+// SPDX-License-Identifier: LicenseRef-Qt-Commercial OR GPL-3.0-only WITH Qt-GPL-exception-1.0
+
+#pragma once
+
+#include <coreplugin/helpmanager_implementation.h>
+
+QT_FORWARD_DECLARE_CLASS(QUrl)
+
+#include <QFutureInterface>
+#include <QHelpEngineCore>
+#include <QVariant>
+
+namespace Help {
+namespace Internal {
+
+class HelpManager : public QObject, public Core::HelpManager::Implementation
+{
+    Q_OBJECT
+
+public:
+    explicit HelpManager(QObject *parent = nullptr);
+    ~HelpManager() override;
+
+    static HelpManager *instance();
+    static QString collectionFilePath();
+
+    void registerDocumentation(const QStringList &fileNames) override;
+    void unregisterDocumentation(const QStringList &fileNames) override;
+
+    static void unregisterNamespaces(const QStringList &nameSpaces);
+
+    static void registerUserDocumentation(const QStringList &filePaths);
+    static QSet<QString> userDocumentationPaths();
+
+    QMultiMap<QString, QUrl> linksForIdentifier(const QString &id) override;
+    QMultiMap<QString, QUrl> linksForKeyword(const QString &key) override;
+    static QMultiMap<QString, QUrl> linksForKeyword(QHelpEngineCore *engine,
+                                                    const QString &key,
+                                                    std::optional<QString> filterName);
+
+    static QUrl findFile(const QUrl &url);
+    QByteArray fileData(const QUrl &url) override;
+
+    static QStringList registeredNamespaces();
+    static QString namespaceFromFile(const QString &file);
+    static QString fileFromNamespace(const QString &nameSpace);
+
+    static void setCustomValue(const QString &key, const QVariant &value);
+    static QVariant customValue(const QString &key, const QVariant &value = QVariant());
+
+    static void aboutToShutdown();
+
+    Q_INVOKABLE void showHelpUrl(
+        const QUrl &url,
+        Core::HelpManager::HelpViewerLocation location = Core::HelpManager::HelpModeAlways) override;
+
+
+    static void setupHelpManager();
+    static void registerDocumentationNow(QFutureInterface<bool> &futureInterface,
+                                         const QStringList &fileNames);
+signals:
+    void collectionFileChanged();
+    void helpRequested(const QUrl &url, Core::HelpManager::HelpViewerLocation location);
+};
+
+} // Internal
+} // Core
